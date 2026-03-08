@@ -127,6 +127,7 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
         </>
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
