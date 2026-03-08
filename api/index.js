@@ -1,6 +1,7 @@
 /**
  * KPSS Hazırlık API Sunucusu - ÜCRETSİZ
- * OpenAI olmadan yerel soru bankası ve analiz ile çalışır
+ * OpenAI olmadan yerel soru bankası ve analiz ile çalışır.
+ * Hiçbir istek sunucuyu çökertmez; hatalar 500 ile güvenli yanıt döner.
  */
 
 const path = require('path');
@@ -8,6 +9,14 @@ const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const http = require('http');
 const url = require('url');
+
+// Process çökmesin: yakalanmamış hatalar sadece loglansın
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.message);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[unhandledRejection]', String(reason));
+});
 
 const PDF_DIR = path.join(__dirname, '..', 'public', 'kpss-pdfs');
 const NOTLAR_DIR = path.join(__dirname, '..', 'public', 'kpss-notlar');
@@ -41,29 +50,41 @@ const EXAM_INFO = {
   },
 };
 
+function safeHandler(fn, defaultResult = null) {
+  return function (body) {
+    try {
+      const out = fn(body);
+      return out !== undefined ? out : defaultResult;
+    } catch (err) {
+      console.error('[handler error]', err.message);
+      throw err;
+    }
+  };
+}
+
 function handleAssessmentTest(body) {
-  const { examType, questionCount = 10 } = body;
+  const { examType, questionCount = 10 } = body || {};
   return getQuestions(examType, questionCount, []);
 }
 
 function handlePracticeTest(body) {
-  const { examType, weakAreas = [], questionCount = 10 } = body;
+  const { examType, weakAreas = [], questionCount = 10 } = body || {};
   return getQuestions(examType, questionCount, weakAreas);
 }
 
 function handleDenemeTest(body) {
-  const { year, examType, questionCount = 120, sessionSeed, tier } = body;
+  const { year, examType, questionCount = 120, sessionSeed, tier } = body || {};
   return getDenemeQuestions(year, examType, questionCount, sessionSeed, tier || 'normal');
 }
 
 function handleQuestionsBySubjectTopic(body) {
-  const { subject, topic, examType, startFrom = 1, sessionSeed } = body;
+  const { subject, topic, examType, startFrom = 1, sessionSeed } = body || {};
   return getQuestionsBySubjectTopic(subject, topic, examType || 'kpss-b', startFrom, sessionSeed);
 }
 
 function handleAnalyzeResults(body) {
-  const { examType, targetScore, result } = body;
-  const { correctCount, totalQuestions, subjects } = result;
+  const { examType, targetScore, result } = body || {};
+  const { correctCount = 0, totalQuestions = 1, subjects = {} } = result || {};
 
   const puan = Math.round((correctCount / totalQuestions) * 100);
   const hedefPuan = parseInt(targetScore.split('-')[0]) || 80;
@@ -106,7 +127,7 @@ function handleAnalyzeResults(body) {
 }
 
 function handleStudyPlan(body) {
-  const { examType, targetScore, weakAreas = [] } = body;
+  const { examType, targetScore, weakAreas = [] } = body || {};
   const hedefPuan = parseInt(targetScore.split('-')[0]) || 80;
 
   const allSubjects = EXAM_INFO[examType]?.subjects || ['Türkçe', 'Matematik', 'Tarih', 'Coğrafya', 'Vatandaşlık', 'Güncel Bilgiler'];
@@ -137,28 +158,22 @@ function handleStudyPlan(body) {
 const ROUTES = {
   'GET /': () => ({ ok: true, message: 'KPSS API çalışıyor', port: PORT }),
   'GET /api/health': () => ({ ok: true }),
-  'POST /api/assessment-test': handleAssessmentTest,
-  'POST /api/assessment_test': handleAssessmentTest,
-  'POST /api/practice-test': handlePracticeTest,
-  'POST /api/deneme-test': handleDenemeTest,
-  'POST /api/questions-by-subject-topic': handleQuestionsBySubjectTopic,
-  'POST /api/questions_by_subject_topic': handleQuestionsBySubjectTopic,
-  'POST /api/subject-topic-questions': handleQuestionsBySubjectTopic,
-  'POST /api/analyze-results': handleAnalyzeResults,
-  'POST /api/study-plan': handleStudyPlan,
-  'GET /api/kpss-pdfs': () => {
-    try {
-      const files = fs.readdirSync(PDF_DIR).filter((f) => f.endsWith('.pdf'));
-      return files.map((f) => ({
-        name: f,
-        url: `/kpss-pdfs/${encodeURIComponent(f)}`,
-      }));
-    } catch {
-      return [];
-    }
-  },
-  'GET /api/kpss-notlar': handleKpssNotlar,
-  'GET /api/kpss_notlar': handleKpssNotlar,
+  'POST /api/assessment-test': safeHandler(handleAssessmentTest, []),
+  'POST /api/assessment_test': safeHandler(handleAssessmentTest, []),
+  'POST /api/practice-test': safeHandler(handlePracticeTest, []),
+  'POST /api/deneme-test': safeHandler(handleDenemeTest, []),
+  'POST /api/questions-by-subject-topic': safeHandler(handleQuestionsBySubjectTopic, []),
+  'POST /api/questions_by_subject_topic': safeHandler(handleQuestionsBySubjectTopic, []),
+  'POST /api/subject-topic-questions': safeHandler(handleQuestionsBySubjectTopic, []),
+  'POST /api/analyze-results': safeHandler(handleAnalyzeResults),
+  'POST /api/study-plan': safeHandler(handleStudyPlan),
+  'GET /api/kpss-pdfs': safeHandler(() => {
+    if (!fs.existsSync(PDF_DIR)) return [];
+    const files = fs.readdirSync(PDF_DIR).filter((f) => f.endsWith('.pdf'));
+    return files.map((f) => ({ name: f, url: `/kpss-pdfs/${encodeURIComponent(f)}` }));
+  }, []),
+  'GET /api/kpss-notlar': safeHandler(handleKpssNotlar, []),
+  'GET /api/kpss_notlar': safeHandler(handleKpssNotlar, []),
 };
 
 const server = http.createServer(async (req, res) => {
@@ -220,28 +235,29 @@ const server = http.createServer(async (req, res) => {
 
   let body = {};
   if (req.method === 'POST') {
-    const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
-    const data = Buffer.concat(chunks).toString();
-    if (data) {
-      try {
-        body = JSON.parse(data);
-      } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Geçersiz JSON' }));
-        return;
-      }
+    try {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const data = Buffer.concat(chunks).toString();
+      if (data) body = JSON.parse(data);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Geçersiz JSON' }));
+      return;
     }
   }
 
   try {
     const result = handler(body);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(result));
+    const json = JSON.stringify(result);
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(json, 'utf8') });
+    res.end(json);
   } catch (err) {
     console.error('[API HATA]', err.message);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ message: err.message || 'Sunucu hatası' }));
+    try {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: err.message || 'Sunucu hatası' }));
+    } catch (_) {}
   }
 });
 

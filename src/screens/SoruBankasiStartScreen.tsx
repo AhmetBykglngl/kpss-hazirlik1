@@ -118,8 +118,10 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
             placeholderTextColor="#64748b"
             keyboardType="number-pad"
             value={startInput}
-            onChangeText={setStartInput}
+            onChangeText={(t) => setStartInput(t.replace(/[^0-9]/g, '').slice(0, 3))}
             maxLength={3}
+            editable={true}
+            {...(Platform.OS === 'web' && { inputMode: 'numeric' })}
           />
           <TouchableOpacity style={[styles.startButton, { minHeight: LAYOUT.minTouch }]} onPress={handleStart} activeOpacity={0.7}>
             <Text style={styles.startButtonText}>Başla</Text>

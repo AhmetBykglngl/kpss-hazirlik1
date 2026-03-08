@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import type { Question, TestResult, StudyPlan } from '../types';
 import type { ExamType } from '../constants/examTypes';
 import { getQuestionsBySubjectTopicFallback, QUESTIONS_FALLBACK } from '../data/questionsFallback';
+import { NOTLAR_FALLBACK, PDFS_FALLBACK } from '../data/staticPdfLists';
 
 // API adresi – .env'deki EXPO_PUBLIC_API_URL veya varsayılan 3002
 const API_URL =
@@ -10,11 +11,27 @@ const API_URL =
     .trim()
     .replace(/\/$/, '') || 'http://localhost:3002';
 
+/** Canlı API yanıt süresi (Render cold start dahil). Bu süre aşılınca fallback kullanılır. */
+const API_TIMEOUT_MS = 20000;
+
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit & { timeout?: number } = {}
+): Promise<Response> {
+  const { timeout = API_TIMEOUT_MS, ...fetchOptions } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  return fetch(url, {
+    ...fetchOptions,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(id));
+}
+
 async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_URL}${endpoint}`;
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await fetchWithTimeout(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -23,8 +40,12 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Bağlantı hatası';
-    const isNetwork = msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network');
-    const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location?.origin || '');
+    const isAbort = msg.includes('abort') || (e instanceof Error && e.name === 'AbortError');
+    const isNetwork =
+      isAbort || msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network');
+    const isLocal =
+      typeof window !== 'undefined' &&
+      /localhost|127\.0\.0\.1/.test(window.location?.origin || '');
     const apiMessage = isLocal
       ? 'API\'ya ulaşılamıyor. Lütfen "npm run api" veya "npm run dev" ile API\'yı başlatın.'
       : 'Soru bankası ve testler canlı sitede çalışması için API yayında olmalı. Render.com\'da API\'yi yayınlayıp Vercel\'de EXPO_PUBLIC_API_URL ekleyin (proje DEPLOY.md).';
@@ -46,10 +67,15 @@ export async function generateAssessmentTest(
   examType: ExamType,
   questionCount: number = 10
 ): Promise<Question[]> {
-  return fetchAPI<Question[]>('/api/assessment-test', {
-    method: 'POST',
-    body: JSON.stringify({ examType, questionCount }),
-  });
+  try {
+    return await fetchAPI<Question[]>('/api/assessment-test', {
+      method: 'POST',
+      body: JSON.stringify({ examType, questionCount }),
+    });
+  } catch {
+    const count = Math.min(questionCount, QUESTIONS_FALLBACK.length);
+    return QUESTIONS_FALLBACK.slice(0, count).map((q, i) => ({ ...q, id: `assess-fb-${i}` }));
+  }
 }
 
 export async function generateDenemeTest(
@@ -81,10 +107,15 @@ export async function generatePracticeTest(
   weakAreas: string[],
   questionCount: number = 10
 ): Promise<Question[]> {
-  return fetchAPI<Question[]>('/api/practice-test', {
-    method: 'POST',
-    body: JSON.stringify({ examType, weakAreas, questionCount }),
-  });
+  try {
+    return await fetchAPI<Question[]>('/api/practice-test', {
+      method: 'POST',
+      body: JSON.stringify({ examType, weakAreas, questionCount }),
+    });
+  } catch {
+    const count = Math.min(questionCount, QUESTIONS_FALLBACK.length);
+    return QUESTIONS_FALLBACK.slice(0, count).map((q, i) => ({ ...q, id: `practice-fb-${i}` }));
+  }
 }
 
 export async function analyzeResults(
@@ -96,14 +127,41 @@ export async function analyzeResults(
   weakAreas: string[];
   recommendations: string[];
 }> {
-  return fetchAPI<{
-    analysis: string;
-    weakAreas: string[];
-    recommendations: string[];
-  }>('/api/analyze-results', {
-    method: 'POST',
-    body: JSON.stringify({ examType, targetScore, result }),
-  });
+  try {
+    return await fetchAPI<{
+      analysis: string;
+      weakAreas: string[];
+      recommendations: string[];
+    }>('/api/analyze-results', {
+      method: 'POST',
+      body: JSON.stringify({ examType, targetScore, result }),
+    });
+  } catch {
+    const { correctCount, totalQuestions, subjects } = result;
+    const puan = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const weakAreas = subjects
+      ? Object.entries(subjects)
+          .filter(([, d]) => d.total > 0 && d.correct / d.total < 0.5)
+          .map(([s]) => s)
+      : [];
+    if (weakAreas.length === 0 && subjects) {
+      const worst = Object.entries(subjects).sort(
+        (a, b) =>
+          (a[1].total > 0 ? a[1].correct / a[1].total : 1) -
+          (b[1].total > 0 ? b[1].correct / b[1].total : 1)
+      )[0];
+      if (worst) weakAreas.push(worst[0]);
+    }
+    return {
+      analysis: `Seviye testi sonucunuz: ${puan} puan (${correctCount}/${totalQuestions}). Hedef: ${targetScore}. ${weakAreas.length > 0 ? `Zayıf alanlar: ${weakAreas.join(', ')}.` : 'Tüm derslere dengeli çalışmaya devam edin.'}`,
+      weakAreas: weakAreas.length > 0 ? weakAreas : ['Türkçe'],
+      recommendations: [
+        'Her gün düzenli soru çözün.',
+        'Yanlış soruları mutlaka inceleyin.',
+        weakAreas.length > 0 ? `${weakAreas.join(' ve ')} konularına ekstra zaman ayırın.` : 'Konu tekrarı yapın.',
+      ],
+    };
+  }
 }
 
 export async function getQuestionsBySubjectTopic(
@@ -130,30 +188,53 @@ export async function getQuestionsBySubjectTopic(
 }
 
 export async function getKpssPdfs(): Promise<{ name: string; url: string }[]> {
-  return fetchAPI<{ name: string; url: string }[]>('/api/kpss-pdfs', { method: 'GET' });
+  try {
+    return await fetchAPI<{ name: string; url: string }[]>('/api/kpss-pdfs', { method: 'GET' });
+  } catch {
+    return PDFS_FALLBACK;
+  }
 }
 
 export async function getKpssNotlar(): Promise<{ name: string; url: string }[]> {
-  return fetchAPI<{ name: string; url: string }[]>('/api/kpss-notlar', { method: 'GET' });
+  try {
+    return await fetchAPI<{ name: string; url: string }[]>('/api/kpss-notlar', { method: 'GET' });
+  } catch {
+    return NOTLAR_FALLBACK;
+  }
 }
 
+/** PDF/not linki: canlıda uygulama origin'inden (Vercel), yoksa API URL'inden. */
 export function getPdfFullUrl(relativeUrl: string): string {
-  return `${API_URL.replace(/\/$/, '')}${relativeUrl}`;
+  const base =
+    typeof window !== 'undefined' ? window.location.origin : API_URL.replace(/\/$/, '');
+  const path = relativeUrl.startsWith('/') ? relativeUrl : `/${relativeUrl}`;
+  return `${base}${path}`;
 }
 
 export async function generateStudyPlan(
   examType: ExamType,
   targetScore: string,
   weakAreas: string[],
-  analysis: string
+  _analysis: string
 ): Promise<StudyPlan> {
-  return fetchAPI<StudyPlan>('/api/study-plan', {
-    method: 'POST',
-    body: JSON.stringify({
-      examType,
-      targetScore,
-      weakAreas,
-      analysis,
-    }),
-  });
+  try {
+    return await fetchAPI<StudyPlan>('/api/study-plan', {
+      method: 'POST',
+      body: JSON.stringify({
+        examType,
+        targetScore,
+        weakAreas,
+        analysis: _analysis,
+      }),
+    });
+  } catch {
+    const focus = weakAreas.length > 0 ? weakAreas : ['Türkçe', 'Matematik', 'Tarih', 'Coğrafya', 'Vatandaşlık', 'Güncel Bilgiler'];
+    return {
+      weeklyPlan: `Haftalık program: ${focus.join(', ')}. Her gün en az 2 dersten çalışın. Hafta sonu genel tekrar.`,
+      dailyGoals: `Günde en az 2 farklı ders; konu + soru. Akşam yanlışların incelenmesi.`,
+      questionTargets: 'Günde en az 50 soru, haftada 1 soru seti çözün.',
+      focusAreas: focus,
+      estimatedDuration: '4-6 ay düzenli çalışma',
+    };
+  }
 }

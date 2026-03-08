@@ -1,4 +1,4 @@
-# Render.com - API sunucusu
+# Render.com - API sunucusu (kusursuz çalışma: health check + tek process)
 # Dashboard: https://dashboard.render.com
 services:
   - type: web
@@ -8,6 +8,6 @@ services:
     startCommand: node api/index.js
     envVars:
       - key: NODE_VERSION
-        value: 20
-    healthCheckPath: /
+        value: "20"
+    healthCheckPath: /api/health
     plan: free
