@@ -1,6 +1,7 @@
 {
   "name": "kpss-hazirlik",
   "version": "1.0.0",
+  "homepage": ".",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

@@ -35,6 +35,16 @@ jobs:
           EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
         run: npx expo export --platform web
 
+      - name: Fix asset paths for GitHub Pages subpath
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          mv dist/_expo dist/expo 2>/dev/null || true
+          sed -i "s|<head>|<head><base href=\"/${REPO}/\">|" dist/index.html
+          sed -i "s|src=\"/|src=\"/${REPO}/|g" dist/index.html
+          sed -i "s|href=\"/|href=\"/${REPO}/|g" dist/index.html
+          find dist -name "*.js" -exec sed -i "s#/expo/#/${REPO}/expo/#g" {} \;
+          find dist -name "*.js" -exec sed -i "s#/meta.json#/${REPO}/meta.json#g" {} \;
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
