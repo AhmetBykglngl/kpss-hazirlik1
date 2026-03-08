@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import type { Question, TestResult, StudyPlan } from '../types';
 import type { ExamType } from '../constants/examTypes';
+import { getQuestionsBySubjectTopicFallback, QUESTIONS_FALLBACK } from '../data/questionsFallback';
 
 // API adresi – .env'deki EXPO_PUBLIC_API_URL veya varsayılan 3002
 const API_URL =
@@ -58,16 +59,21 @@ export async function generateDenemeTest(
   sessionSeed?: number,
   tier?: 'normal' | 'zor' | 'cokZor'
 ): Promise<Question[]> {
-  return fetchAPI<Question[]>('/api/deneme-test', {
-    method: 'POST',
-    body: JSON.stringify({
-      year,
-      examType,
-      questionCount,
-      sessionSeed: sessionSeed ?? Date.now(),
-      tier: tier ?? 'normal',
-    }),
-  });
+  try {
+    return await fetchAPI<Question[]>('/api/deneme-test', {
+      method: 'POST',
+      body: JSON.stringify({
+        year,
+        examType,
+        questionCount,
+        sessionSeed: sessionSeed ?? Date.now(),
+        tier: tier ?? 'normal',
+      }),
+    });
+  } catch {
+    const count = Math.min(questionCount, QUESTIONS_FALLBACK.length);
+    return QUESTIONS_FALLBACK.slice(0, count).map((q, i) => ({ ...q, id: `deneme-fb-${year}-${i}` }));
+  }
 }
 
 export async function generatePracticeTest(
@@ -119,7 +125,6 @@ export async function getQuestionsBySubjectTopic(
       }),
     });
   } catch {
-    const { getQuestionsBySubjectTopicFallback } = await import('../data/questionsFallback');
     return getQuestionsBySubjectTopicFallback(subject, topic, startFrom);
   }
 }
