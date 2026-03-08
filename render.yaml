@@ -1,0 +1,13 @@
+# Render.com - API sunucusu
+# Dashboard: https://dashboard.render.com
+services:
+  - type: web
+    name: kpss-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: node api/index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+    healthCheckPath: /
+    plan: free
