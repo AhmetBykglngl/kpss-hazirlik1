@@ -91,7 +91,25 @@ kpss-hazirlik/
 
 ## GitHub ve Yayınlama
 
-Projeyi GitHub'a yükleyip canlı linke çevirmek için **[DEPLOY.md](./DEPLOY.md)** dosyasındaki adımları izleyin:
+### Uygulama linki (GitHub Pages)
+
+Repoyu **main** dalına push ettiğinde uygulama otomatik olarak GitHub Pages’e deploy edilir. **Bir kez** aşağıdaki ayarı yapman yeterli:
+
+1. GitHub’da repoya git → **Settings** → **Pages**
+2. **Build and deployment** → **Source:** **GitHub Actions** seç
+3. Bir sonraki **main** push’unda workflow çalışır; bitince uygulama linki:
+
+   **`https://AhmetBykgIngl.github.io/kpss-hazirlik1/`**
+
+Bu linki repoda **About** → **Website** alanına yazarsan, repo sayfasından tek tıkla uygulama açılır.
+
+İsteğe bağlı: Canlı API kullanacaksan (ör. Render’da host ettiysen), repo **Settings** → **Secrets and variables** → **Actions** → **New repository secret** → `EXPO_PUBLIC_API_URL` adıyla API adresini ekle.
+
+Detay için **[GITHUB-PAGES.md](./GITHUB-PAGES.md)** dosyasına bak.
+
+---
+
+Projeyi Vercel/Render ile yayınlamak için **[DEPLOY.md](./DEPLOY.md)** dosyasındaki adımları izleyin:
 
 1. **GitHub** – Kodu depoya yükle
 2. **Render** – API'yi ücretsiz host et
