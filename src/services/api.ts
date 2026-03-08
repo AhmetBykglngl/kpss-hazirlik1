@@ -107,16 +107,21 @@ export async function getQuestionsBySubjectTopic(
   startFrom: number,
   sessionSeed?: number
 ): Promise<Question[]> {
-  return fetchAPI<Question[]>('/api/questions-by-subject-topic', {
-    method: 'POST',
-    body: JSON.stringify({
-      subject,
-      topic,
-      examType,
-      startFrom,
-      sessionSeed: sessionSeed ?? Date.now(),
-    }),
-  });
+  try {
+    return await fetchAPI<Question[]>('/api/questions-by-subject-topic', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject,
+        topic,
+        examType,
+        startFrom,
+        sessionSeed: sessionSeed ?? Date.now(),
+      }),
+    });
+  } catch {
+    const { getQuestionsBySubjectTopicFallback } = await import('../data/questionsFallback');
+    return getQuestionsBySubjectTopicFallback(subject, topic, startFrom);
+  }
 }
 
 export async function getKpssPdfs(): Promise<{ name: string; url: string }[]> {
