@@ -22,11 +22,12 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Bağlantı hatası';
-    throw new Error(
-      msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network')
-        ? `API'ya ulaşılamıyor. Lütfen "npm run api" veya "npm run dev" ile API'yı başlatın.`
-        : msg
-    );
+    const isNetwork = msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network');
+    const isLocal = typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location?.origin || '');
+    const apiMessage = isLocal
+      ? 'API\'ya ulaşılamıyor. Lütfen "npm run api" veya "npm run dev" ile API\'yı başlatın.'
+      : 'Soru bankası ve testler canlı sitede çalışması için API yayında olmalı. Render.com\'da API\'yi yayınlayıp Vercel\'de EXPO_PUBLIC_API_URL ekleyin (proje DEPLOY.md).';
+    throw new Error(isNetwork ? apiMessage : msg);
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

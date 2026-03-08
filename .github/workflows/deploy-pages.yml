@@ -43,6 +43,7 @@ jobs:
           sed -i "s|src=\"/|src=\"/${REPO}/|g" dist/index.html
           sed -i "s|href=\"/|href=\"/${REPO}/|g" dist/index.html
           find dist -name "*.js" -exec sed -i "s#/expo/#/${REPO}/expo/#g" {} \;
+          find dist -name "*.js" -exec sed -i "s#/index-\\([^\"]*\\.js\\)#/${REPO}/expo/static/js/web/index-\\1#g" {} \;
           find dist -name "*.js" -exec sed -i "s#/meta.json#/${REPO}/meta.json#g" {} \;
 
       - name: Setup Pages

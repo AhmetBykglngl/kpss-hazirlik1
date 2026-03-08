@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -41,9 +42,9 @@ export default function HomeScreen({
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={contentStyle}
-      showsVerticalScrollIndicator={false}
+      style={[styles.container, Platform.OS === 'web' && styles.containerWeb]}
+      contentContainerStyle={[contentStyle, styles.contentContainer]}
+      showsVerticalScrollIndicator={true}
       bounces={true}
     >
       <View style={styles.header}>
@@ -145,6 +146,8 @@ export default function HomeScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
+  containerWeb: { maxHeight: '100%', overflow: 'auto' as const },
+  contentContainer: { flexGrow: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
