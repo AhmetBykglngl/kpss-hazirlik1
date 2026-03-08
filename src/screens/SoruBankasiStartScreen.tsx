@@ -6,7 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
+  useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LAYOUT } from '../constants/layout';
 import { SUBJECTS, TOPICS_BY_SUBJECT } from '../constants/examTypes';
 
 interface Props {
@@ -17,6 +22,10 @@ interface Props {
 type Step = 1 | 2 | 3;
 
 export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const padding = width < 400 ? LAYOUT.spacingSm : LAYOUT.spacing;
+  const contentStyle = { padding, paddingBottom: padding + insets.bottom + LAYOUT.safeBottom };
   const [step, setStep] = useState<Step>(1);
   const [subject, setSubject] = useState<string>('');
   const [topic, setTopic] = useState<string>('');
@@ -55,8 +64,9 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <ScrollView contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { minHeight: LAYOUT.minTouch, justifyContent: 'center' }]} activeOpacity={0.7}>
         <Text style={styles.backText}>← Geri</Text>
       </TouchableOpacity>
 
@@ -67,9 +77,9 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
           {SUBJECTS.map((s) => (
             <TouchableOpacity
               key={s}
-              style={styles.optionCard}
+              style={[styles.optionCard, { minHeight: LAYOUT.minTouch }]}
               onPress={() => handleSubjectSelect(s)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
               <Text style={styles.optionText}>{s}</Text>
               <Text style={styles.optionArrow}>→</Text>
@@ -86,9 +96,9 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
           {topics.map((t) => (
             <TouchableOpacity
               key={t}
-              style={styles.optionCard}
+              style={[styles.optionCard, { minHeight: LAYOUT.minTouch }]}
               onPress={() => handleTopicSelect(t)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
               <Text style={styles.optionText}>{t}</Text>
               <Text style={styles.optionArrow}>→</Text>
@@ -111,7 +121,7 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
             onChangeText={setStartInput}
             maxLength={3}
           />
-          <TouchableOpacity style={styles.startButton} onPress={handleStart}>
+          <TouchableOpacity style={[styles.startButton, { minHeight: LAYOUT.minTouch }]} onPress={handleStart} activeOpacity={0.7}>
             <Text style={styles.startButtonText}>Başla</Text>
           </TouchableOpacity>
         </>
@@ -122,7 +132,6 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  content: { padding: 24, paddingBottom: 48 },
   backBtn: { marginBottom: 24 },
   backText: { fontSize: 16, color: '#94a3b8' },
   stepBadge: { fontSize: 14, color: '#3b82f6', fontWeight: '600', marginBottom: 16 },

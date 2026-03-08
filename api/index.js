@@ -10,6 +10,20 @@ const http = require('http');
 const url = require('url');
 
 const PDF_DIR = path.join(__dirname, '..', 'public', 'kpss-pdfs');
+const NOTLAR_DIR = path.join(__dirname, '..', 'public', 'kpss-notlar');
+
+function handleKpssNotlar() {
+  try {
+    if (!fs.existsSync(NOTLAR_DIR)) return [];
+    const files = fs.readdirSync(NOTLAR_DIR).filter((f) => f.endsWith('.pdf'));
+    return files.map((f) => ({
+      name: f,
+      url: `/kpss-notlar/${encodeURIComponent(f)}`,
+    }));
+  } catch {
+    return [];
+  }
+}
 const { getQuestions, getDenemeQuestions, getQuestionsBySubjectTopic } = require('./questions');
 
 const PORT = process.env.PORT || 3001;
@@ -143,6 +157,8 @@ const ROUTES = {
       return [];
     }
   },
+  'GET /api/kpss-notlar': handleKpssNotlar,
+  'GET /api/kpss_notlar': handleKpssNotlar,
 };
 
 const server = http.createServer(async (req, res) => {
@@ -165,7 +181,7 @@ const server = http.createServer(async (req, res) => {
     handler = handleQuestionsBySubjectTopic;
   }
 
-  // PDF dosyası sun (GET /kpss-pdfs/dosya.pdf)
+  // PDF dosyası sun – önce dosya istekleri (liste API'sinden önce)
   if (!handler && req.method === 'GET' && pathname.startsWith('/kpss-pdfs/')) {
     const filename = decodeURIComponent(pathname.replace('/kpss-pdfs/', ''));
     if (filename && !filename.includes('..')) {
@@ -177,6 +193,22 @@ const server = http.createServer(async (req, res) => {
         return;
       }
     }
+  }
+  if (!handler && req.method === 'GET' && pathname.startsWith('/kpss-notlar/')) {
+    const filename = decodeURIComponent(pathname.replace('/kpss-notlar/', ''));
+    if (filename && !filename.includes('..')) {
+      const filePath = path.join(NOTLAR_DIR, filename);
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        const data = fs.readFileSync(filePath);
+        res.writeHead(200, { 'Content-Type': 'application/pdf', 'Content-Length': data.length });
+        res.end(data);
+        return;
+      }
+    }
+  }
+  // KPSS notları liste API – sadece /api/... path'leri (dosya istekleri yukarıda)
+  if (!handler && req.method === 'GET' && (pathname === '/api/kpss-notlar' || pathname === '/api/kpss_notlar')) {
+    handler = handleKpssNotlar;
   }
 
   if (!handler) {

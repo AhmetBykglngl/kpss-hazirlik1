@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { getQuestionsBySubjectTopic } from '../services/api';
+import { LAYOUT } from '../constants/layout';
 import type { Question } from '../types';
 
 interface Props {
@@ -304,6 +305,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -312,6 +315,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#14532d',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 2,
     borderColor: '#22c55e',
@@ -320,6 +325,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#450a0a',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 2,
     borderColor: '#ef4444',

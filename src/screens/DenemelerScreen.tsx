@@ -5,7 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LAYOUT } from '../constants/layout';
 import { DENEME_YEARS } from '../constants/examTypes';
 import {
   getCompletedSets,
@@ -23,6 +26,10 @@ interface Props {
 const TIERS: SetTier[] = ['normal', 'zor', 'cokZor'];
 
 export default function DenemelerScreen({ onSelectDeneme, onSelectSubjectTopic, onBack }: Props) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const padding = width < 400 ? LAYOUT.spacingSm : LAYOUT.spacing;
+  const contentStyle = { padding, paddingBottom: padding + insets.bottom + LAYOUT.safeBottom };
   const [completed, setCompleted] = useState<Record<SetTier, string[]>>({
     normal: [],
     zor: [],
@@ -34,8 +41,8 @@ export default function DenemelerScreen({ onSelectDeneme, onSelectSubjectTopic, 
   }, []);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+    <ScrollView style={styles.container} contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false}>
+      <TouchableOpacity onPress={onBack} style={[styles.backBtn, { minHeight: LAYOUT.minTouch, justifyContent: 'center' }]} activeOpacity={0.7}>
         <Text style={styles.backText}>← Geri</Text>
       </TouchableOpacity>
       <Text style={styles.title}>Soru Bankası</Text>
@@ -44,9 +51,9 @@ export default function DenemelerScreen({ onSelectDeneme, onSelectSubjectTopic, 
       </Text>
 
       <TouchableOpacity
-        style={[styles.denemeCard, styles.subjectTopicCard]}
+        style={[styles.denemeCard, styles.subjectTopicCard, { minHeight: LAYOUT.minTouch }]}
         onPress={onSelectSubjectTopic}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
       >
         <Text style={styles.yearText}>Ders + Konu</Text>
         <Text style={styles.denemeLabel}>Ders ve Konu Seçerek Çalış</Text>
@@ -76,6 +83,7 @@ export default function DenemelerScreen({ onSelectDeneme, onSelectSubjectTopic, 
                   key={`${tier}-${year}`}
                   style={[
                     styles.denemeCard,
+                    { minHeight: LAYOUT.minTouch },
                     isDone && styles.denemeCardDone,
                     disabled && styles.denemeCardDisabled,
                   ]}
@@ -101,7 +109,6 @@ export default function DenemelerScreen({ onSelectDeneme, onSelectSubjectTopic, 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  content: { padding: 24, paddingBottom: 48 },
   backBtn: { marginBottom: 24 },
   backText: { fontSize: 16, color: '#94a3b8' },
   title: { fontSize: 24, fontWeight: '800', color: '#f8fafc' },

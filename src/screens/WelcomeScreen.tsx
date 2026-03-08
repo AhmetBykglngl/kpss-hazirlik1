@@ -7,8 +7,12 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
+  useWindowDimensions,
+  KeyboardAvoidingView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EXAM_TYPES, TARGET_OPTIONS, EDUCATION_LEVELS } from '../constants/examTypes';
+import { LAYOUT } from '../constants/layout';
 import type { ExamType, EducationLevel } from '../constants/examTypes';
 
 interface Props {
@@ -17,6 +21,11 @@ interface Props {
 
 export default function WelcomeScreen({ onComplete }: Props) {
   const [step, setStep] = useState(1);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 400;
+  const padding = isNarrow ? LAYOUT.spacingSm : LAYOUT.spacing;
+  const contentStyle = { padding, paddingBottom: padding + insets.bottom + LAYOUT.safeBottom };
   const [name, setName] = useState('');
   const [educationLevel, setEducationLevel] = useState<EducationLevel | null>(null);
   const [examType, setExamType] = useState<ExamType | null>(null);
@@ -35,7 +44,17 @@ export default function WelcomeScreen({ onComplete }: Props) {
   }, [step, educationLevel]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={contentStyle}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>KPSS Hazırlık</Text>
       <Text style={styles.subtitle}>Hedefine ulaşmana yardımcı olacağız</Text>
 
@@ -152,12 +171,13 @@ export default function WelcomeScreen({ onComplete }: Props) {
         </>
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  content: { padding: 24, paddingBottom: 48 },
+  scroll: { flex: 1 },
   title: {
     fontSize: 28,
     fontWeight: '800',
@@ -174,11 +194,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#f8fafc',
     marginBottom: 24,
+    minHeight: LAYOUT.minTouch,
   },
   card: {
     backgroundColor: '#1e293b',
     borderRadius: 12,
     padding: 20,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 12,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -190,6 +213,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
   },

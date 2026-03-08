@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { generateDenemeTest } from '../services/api';
 import { markSetCompleted, getTierLabel } from '../utils/completedSets';
+import { LAYOUT } from '../constants/layout';
 import type { Question } from '../types';
 import type { SetTier } from '../utils/completedSets';
 
@@ -284,8 +285,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#334155',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
     flex: 1,
     minWidth: 120,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   navButtonText: { fontSize: 16, color: '#f8fafc', fontWeight: '600' },
@@ -295,6 +298,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 2,
     borderColor: 'transparent',
@@ -303,6 +308,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#14532d',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 2,
     borderColor: '#22c55e',
@@ -311,6 +318,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#450a0a',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     marginBottom: 10,
     borderWidth: 2,
     borderColor: '#ef4444',
@@ -331,6 +340,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     alignItems: 'center',
     flex: 1,
     minWidth: 120,

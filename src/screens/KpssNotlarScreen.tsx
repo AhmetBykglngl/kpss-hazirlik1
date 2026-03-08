@@ -11,33 +11,21 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LAYOUT } from '../constants/layout';
-import { getKpssPdfs, getPdfFullUrl } from '../services/api';
+import { getKpssNotlar, getPdfFullUrl } from '../services/api';
 
-// Dosya adından okunaklı etiket üret
 function formatLabel(name: string): string {
-  const n = name.replace('.pdf', '').toLowerCase();
-  const yearMatch = n.match(/20\d{2}|19\d{2}/);
-  const year = yearMatch ? yearMatch[0] : '';
-  if (n.includes('cevap') || n.includes('anahtar')) {
-    return year ? `${year} Cevap Anahtarı` : 'Cevap Anahtarı';
-  }
-  if (n.includes('genyet') || n.includes('gen yet')) {
-    return year ? `${year} Genel Yetenek` : 'Genel Yetenek';
-  }
-  if (n.includes('genkul') || n.includes('gen kul')) {
-    return year ? `${year} Genel Kültür` : 'Genel Kültür';
-  }
-  if (year || n.includes('kpss') || n.includes('onlis')) {
-    return year ? `${year} KPSS Önlisans` : 'KPSS Önlisans';
-  }
-  return name.replace('.pdf', '').slice(0, 40);
+  return name
+    .replace('.pdf', '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .slice(0, 50);
 }
 
 interface Props {
   onBack: () => void;
 }
 
-export default function PdfDocumentsScreen({ onBack }: Props) {
+export default function KpssNotlarScreen({ onBack }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const padding = width < 400 ? LAYOUT.spacingSm : LAYOUT.spacing;
@@ -47,17 +35,17 @@ export default function PdfDocumentsScreen({ onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadPdfs();
+    loadNotlar();
   }, []);
 
-  const loadPdfs = async () => {
+  const loadNotlar = async () => {
     setLoading(true);
     setError(null);
     try {
-      const list = await getKpssPdfs();
+      const list = await getKpssNotlar();
       setPdfs(list);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'PDF listesi yüklenemedi');
+      setError(e instanceof Error ? e.message : 'Not listesi yüklenemedi');
       setPdfs([]);
     } finally {
       setLoading(false);
@@ -73,7 +61,7 @@ export default function PdfDocumentsScreen({ onBack }: Props) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>PDF listesi yükleniyor...</Text>
+        <Text style={styles.loadingText}>Notlar yükleniyor...</Text>
       </View>
     );
   }
@@ -84,7 +72,7 @@ export default function PdfDocumentsScreen({ onBack }: Props) {
         <Text style={styles.errorTitle}>Yüklenemedi</Text>
         <Text style={styles.errorText}>{error}</Text>
         <Text style={styles.errorHint}>API sunucusu (npm run api) çalışıyor olmalı.</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={loadPdfs}>
+        <TouchableOpacity style={styles.retryBtn} onPress={loadNotlar}>
           <Text style={styles.retryBtnText}>Tekrar Dene</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
@@ -94,30 +82,28 @@ export default function PdfDocumentsScreen({ onBack }: Props) {
     );
   }
 
-  const sorted = [...pdfs].sort((a, b) => a.name.localeCompare(b.name));
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false}>
       <TouchableOpacity onPress={onBack} style={[styles.backBtn, { minHeight: LAYOUT.minTouch, justifyContent: 'center' }]} activeOpacity={0.7}>
         <Text style={styles.backText}>← Geri</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>Çıkmış Sorular (PDF)</Text>
+      <Text style={styles.title}>KPSS Notları</Text>
       <Text style={styles.subtitle}>
-        KPSS Önlisans çıkmış sınav soruları ve cevap anahtarları. Dokununca yeni sekmede açılır.
+        Ders notları ve özetler. Dokununca yeni sekmede açılır.
       </Text>
-      {sorted.length === 0 ? (
+      {pdfs.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Henüz PDF bulunamadı.</Text>
+          <Text style={styles.emptyText}>Henüz not eklenmemiş.</Text>
         </View>
       ) : (
-        sorted.map((item) => (
+        pdfs.map((item) => (
           <TouchableOpacity
             key={item.name}
             style={[styles.pdfCard, { minHeight: LAYOUT.minTouch }]}
             onPress={() => openPdf(item.url)}
             activeOpacity={0.7}
           >
-            <Text style={styles.pdfIcon}>📄</Text>
+            <Text style={styles.pdfIcon}>📚</Text>
             <View style={styles.pdfInfo}>
               <Text style={styles.pdfLabel}>{formatLabel(item.name)}</Text>
               <Text style={styles.pdfName}>{item.name}</Text>
@@ -158,7 +144,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
+    borderLeftColor: '#22c55e',
   },
   pdfIcon: { fontSize: 28, marginRight: 16 },
   pdfInfo: { flex: 1 },

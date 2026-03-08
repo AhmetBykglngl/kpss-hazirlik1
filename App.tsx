@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, StyleSheet, Platform } from 'react-native';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -14,6 +14,7 @@ import DenemeTestScreen from './src/screens/DenemeTestScreen';
 import SoruBankasiStartScreen from './src/screens/SoruBankasiStartScreen';
 import SubjectTopicTestScreen from './src/screens/SubjectTopicTestScreen';
 import PdfDocumentsScreen from './src/screens/PdfDocumentsScreen';
+import KpssNotlarScreen from './src/screens/KpssNotlarScreen';
 import type { ExamType, EducationLevel } from './src/constants/examTypes';
 import type { TestResult } from './src/types';
 import type { SetTier } from './src/utils/completedSets';
@@ -29,10 +30,12 @@ type Screen =
   | 'denemeTest'
   | 'soruBankasiStart'
   | 'subjectTopicTest'
-  | 'pdfDocs';
+  | 'pdfDocs'
+  | 'kpssNotlar';
 
 function AppContent() {
   const { user, isLoading, login } = useAuth();
+  const insets = useSafeAreaInsets();
   const [screen, setScreen] = useState<Screen>('welcome');
   const [lastResult, setLastResult] = useState<TestResult | null>(null);
   const [selectedDenemeYear, setSelectedDenemeYear] = useState<number | null>(null);
@@ -73,7 +76,7 @@ function AppContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]} edges={['top']}>
       <StatusBar style="light" />
       {!user ? (
         <WelcomeScreen onComplete={handleLogin} />
@@ -85,6 +88,7 @@ function AppContent() {
           onViewResults={() => currentResult && setScreen('results')}
           onOpenDenemeler={() => setScreen('denemeler')}
           onOpenPdfDocs={() => setScreen('pdfDocs')}
+          onOpenKpssNotlar={() => setScreen('kpssNotlar')}
         />
       ) : screen === 'assessment' ? (
         <AssessmentTestScreen
@@ -143,6 +147,8 @@ function AppContent() {
         />
       ) : screen === 'pdfDocs' ? (
         <PdfDocumentsScreen onBack={() => setScreen('home')} />
+      ) : screen === 'kpssNotlar' ? (
+        <KpssNotlarScreen onBack={() => setScreen('home')} />
       ) : (
         <HomeScreen
           onStartAssessment={() => setScreen('assessment')}
@@ -151,9 +157,10 @@ function AppContent() {
           onViewResults={() => currentResult && setScreen('results')}
           onOpenDenemeler={() => setScreen('denemeler')}
           onOpenPdfDocs={() => setScreen('pdfDocs')}
+          onOpenKpssNotlar={() => setScreen('kpssNotlar')}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -171,5 +178,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
+    ...(Platform.OS === 'web' && {
+      minHeight: '100vh',
+      minHeight: '100dvh',
+    }),
   },
 });

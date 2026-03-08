@@ -122,6 +122,10 @@ export async function getKpssPdfs(): Promise<{ name: string; url: string }[]> {
   return fetchAPI<{ name: string; url: string }[]>('/api/kpss-pdfs', { method: 'GET' });
 }
 
+export async function getKpssNotlar(): Promise<{ name: string; url: string }[]> {
+  return fetchAPI<{ name: string; url: string }[]>('/api/kpss-notlar', { method: 'GET' });
+}
+
 export function getPdfFullUrl(relativeUrl: string): string {
   return `${API_URL.replace(/\/$/, '')}${relativeUrl}`;
 }

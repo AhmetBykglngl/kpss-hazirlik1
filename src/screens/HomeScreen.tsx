@@ -5,8 +5,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { LAYOUT } from '../constants/layout';
 import { EXAM_TYPES } from '../constants/examTypes';
 
 interface Props {
@@ -16,6 +19,7 @@ interface Props {
   onViewResults: () => void;
   onOpenDenemeler: () => void;
   onOpenPdfDocs: () => void;
+  onOpenKpssNotlar: () => void;
 }
 
 export default function HomeScreen({
@@ -25,12 +29,23 @@ export default function HomeScreen({
   onViewResults,
   onOpenDenemeler,
   onOpenPdfDocs,
+  onOpenKpssNotlar,
 }: Props) {
   const { user, logout } = useAuth();
   const exam = EXAM_TYPES.find((e) => e.id === user?.examType);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 400;
+  const padding = isNarrow ? LAYOUT.spacingSm : LAYOUT.spacing;
+  const contentStyle = { padding, paddingBottom: padding + insets.bottom + LAYOUT.safeBottom };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={contentStyle}
+      showsVerticalScrollIndicator={false}
+      bounces={true}
+    >
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Merhaba, {user?.name}</Text>
@@ -106,6 +121,16 @@ export default function HomeScreen({
       </View>
 
       <View style={styles.card}>
+        <Text style={styles.cardTitle}>KPSS Notları</Text>
+        <Text style={styles.cardDesc}>
+          KPSS ders notları ve özetleri. Ramazan Yetgin Tarih Notları dahil.
+        </Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={onOpenKpssNotlar}>
+          <Text style={styles.secondaryButtonText}>Notlara Git</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.cardTitle}>Çıkmış Sorular (PDF)</Text>
         <Text style={styles.cardDesc}>
           2006, 2008, 2012-2020 KPSS Önlisans sınav soruları ve cevap anahtarları. Dokunarak açabilirsiniz.
@@ -120,7 +145,6 @@ export default function HomeScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  content: { padding: 24, paddingBottom: 48 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -145,6 +169,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
   },
@@ -153,6 +179,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#334155',
     borderRadius: 12,
     padding: 16,
+    minHeight: LAYOUT.minTouch,
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 16,
   },
