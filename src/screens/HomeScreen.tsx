@@ -41,12 +41,13 @@ export default function HomeScreen({
   const contentStyle = { padding, paddingBottom: padding + insets.bottom + LAYOUT.safeBottom };
 
   return (
-    <ScrollView
-      style={[styles.container, Platform.OS === 'web' && styles.containerWeb]}
-      contentContainerStyle={[contentStyle, styles.contentContainer]}
-      showsVerticalScrollIndicator={true}
-      bounces={true}
-    >
+    <View style={styles.wrapper}>
+      <ScrollView
+        style={[styles.container, Platform.OS === 'web' && styles.containerWeb]}
+        contentContainerStyle={[contentStyle, styles.contentContainer]}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+      >
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Merhaba, {user?.name}</Text>
@@ -140,13 +141,19 @@ export default function HomeScreen({
           <Text style={styles.secondaryButtonText}>{`PDF'lere Git`}</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1, minHeight: 0 },
   container: { flex: 1, backgroundColor: '#0f172a' },
-  containerWeb: { maxHeight: '100%', overflow: 'auto' as const },
+  containerWeb: {
+    flex: 1,
+    overflow: 'auto' as const,
+    WebkitOverflowScrolling: 'touch' as const,
+  },
   contentContainer: { flexGrow: 1 },
   header: {
     flexDirection: 'row',
