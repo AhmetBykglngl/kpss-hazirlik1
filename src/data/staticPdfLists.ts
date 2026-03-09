@@ -9,4 +9,6 @@ export const NOTLAR_FALLBACK: { name: string; url: string }[] = [
 
 export const PDFS_FALLBACK: { name: string; url: string }[] = [
   // public/kpss-pdfs içindeki dosyalar buraya eklenebilir
+  // Coğrafya kodlamaları hem "Notlar" hem "Çıkmış sorular" altında görünsün:
+  { name: 'Kpss-Cografya-Kodlamalari.pdf', url: '/kpss-notlar/Kpss-Cografya-Kodlamalari.pdf' },
 ];

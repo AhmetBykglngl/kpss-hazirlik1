@@ -64,8 +64,15 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-    <ScrollView contentContainerStyle={contentStyle} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={contentStyle}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+      >
       <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { minHeight: LAYOUT.minTouch, justifyContent: 'center' }]} activeOpacity={0.7}>
         <Text style={styles.backText}>← Geri</Text>
       </TouchableOpacity>
@@ -120,7 +127,9 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
             value={startInput}
             onChangeText={(t) => setStartInput(t.replace(/[^0-9]/g, '').slice(0, 3))}
             maxLength={3}
-            editable={true}
+            editable
+            autoFocus
+            blurOnSubmit={false}
             {...(Platform.OS === 'web' && { inputMode: 'numeric' })}
           />
           <TouchableOpacity style={[styles.startButton, { minHeight: LAYOUT.minTouch }]} onPress={handleStart} activeOpacity={0.7}>
@@ -128,7 +137,7 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
           </TouchableOpacity>
         </>
       )}
-    </ScrollView>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
