@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  useWindowDimensions,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LAYOUT } from '../constants/layout';
 import { SUBJECTS, TOPICS_BY_SUBJECT } from '../constants/examTypes';
@@ -61,6 +51,14 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
     if (subject && num >= 1) {
       onStart(subject, topic || 'Tümü', num);
     }
+  };
+
+  const adjustStart = (delta: number) => {
+    setStartInput((prev) => {
+      const current = parseInt(prev || '1', 10) || 1;
+      const next = Math.max(1, current + delta);
+      return String(next);
+    });
   };
 
   return (
@@ -118,20 +116,40 @@ export default function SoruBankasiStartScreen({ onStart, onBack }: Props) {
         <>
           <Text style={styles.stepBadge}>{subject} › {topic || 'Tümü'}</Text>
           <Text style={styles.title}>Kaçıncı sorudan başlamak istersiniz?</Text>
-          <Text style={styles.subtitle}>1 ve üzeri numara girin.</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="1"
-            placeholderTextColor="#64748b"
-            keyboardType="number-pad"
-            value={startInput}
-            onChangeText={(t) => setStartInput(t.replace(/[^0-9]/g, '').slice(0, 3))}
-            maxLength={3}
-            editable
-            autoFocus
-            blurOnSubmit={false}
-            {...(Platform.OS === 'web' && { inputMode: 'numeric' })}
-          />
+          <Text style={styles.subtitle}>Aşağıdan sayı seçin (en az 1).</Text>
+          <View style={styles.stepSelectorRow}>
+            <TouchableOpacity
+              style={[styles.stepBtn, { minHeight: LAYOUT.minTouch }]}
+              onPress={() => adjustStart(-10)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.stepBtnText}>-10</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.stepBtn, { minHeight: LAYOUT.minTouch }]}
+              onPress={() => adjustStart(-1)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.stepBtnText}>-1</Text>
+            </TouchableOpacity>
+            <View style={styles.stepNumberBox}>
+              <Text style={styles.stepNumberText}>{startInput}</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.stepBtn, { minHeight: LAYOUT.minTouch }]}
+              onPress={() => adjustStart(1)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.stepBtnText}>+1</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.stepBtn, { minHeight: LAYOUT.minTouch }]}
+              onPress={() => adjustStart(10)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.stepBtnText}>+10</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={[styles.startButton, { minHeight: LAYOUT.minTouch }]} onPress={handleStart} activeOpacity={0.7}>
             <Text style={styles.startButtonText}>Başla</Text>
           </TouchableOpacity>
@@ -162,14 +180,34 @@ const styles = StyleSheet.create({
   },
   optionText: { fontSize: 17, fontWeight: '600', color: '#f8fafc' },
   optionArrow: { fontSize: 18, color: '#64748b' },
-  input: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 18,
-    color: '#f8fafc',
+  stepSelectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
+  stepBtn: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  stepBtnText: { fontSize: 16, fontWeight: '600', color: '#e5e7eb' },
+  stepNumberBox: {
+    minWidth: 72,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: '#0b1120',
+    borderWidth: 1,
+    borderColor: '#334155',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: { fontSize: 20, fontWeight: '700', color: '#f8fafc' },
   startButton: {
     backgroundColor: '#3b82f6',
     borderRadius: 12,
