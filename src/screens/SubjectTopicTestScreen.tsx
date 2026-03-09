@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Modal,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { getQuestionsBySubjectTopic } from '../services/api';
 import { LAYOUT } from '../constants/layout';
@@ -89,6 +80,19 @@ export default function SubjectTopicTestScreen({ subject, topic, startFrom, onBa
     }
   };
 
+  const openJumpModal = () => {
+    setJumpInput(String(currentIndex + 1));
+    setShowJumpModal(true);
+  };
+
+  const adjustJump = (delta: number) => {
+    setJumpInput((prev) => {
+      const current = parseInt(prev || String(currentIndex + 1), 10) || currentIndex + 1;
+      const next = Math.max(1, Math.min(questions.length, current + delta));
+      return String(next);
+    });
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -136,10 +140,7 @@ export default function SubjectTopicTestScreen({ subject, topic, startFrom, onBa
           <Text style={styles.backText}>← Geri</Text>
         </TouchableOpacity>
         <Text style={styles.denemeBadge}>{subject} › {topic}</Text>
-        <TouchableOpacity
-          onPress={() => setShowJumpModal(true)}
-          style={styles.progressTouch}
-        >
+        <TouchableOpacity onPress={openJumpModal} style={styles.progressTouch}>
           <Text style={styles.progress}>
             {currentIndex + 1} / {questions.length}
           </Text>
@@ -160,18 +161,40 @@ export default function SubjectTopicTestScreen({ subject, topic, startFrom, onBa
         >
           <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
             <Text style={styles.modalTitle}>Soruya git</Text>
-            <Text style={styles.modalSubtitle}>
-              1 - {questions.length} arası numara girin
-            </Text>
-            <TextInput
-              style={styles.jumpInput}
-              placeholder={`örn. ${Math.min(50, questions.length)}`}
-              placeholderTextColor="#64748b"
-              keyboardType="number-pad"
-              value={jumpInput}
-              onChangeText={setJumpInput}
-              maxLength={3}
-            />
+            <Text style={styles.modalSubtitle}>1 - {questions.length} arası soru numarası seçin</Text>
+            <View style={styles.jumpSelectorRow}>
+              <TouchableOpacity
+                style={styles.jumpStepBtn}
+                onPress={() => adjustJump(-10)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.jumpStepBtnText}>-10</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.jumpStepBtn}
+                onPress={() => adjustJump(-1)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.jumpStepBtnText}>-1</Text>
+              </TouchableOpacity>
+              <View style={styles.jumpNumberBox}>
+                <Text style={styles.jumpNumberText}>{jumpInput || currentIndex + 1}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.jumpStepBtn}
+                onPress={() => adjustJump(1)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.jumpStepBtnText}>+1</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.jumpStepBtn}
+                onPress={() => adjustJump(10)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.jumpStepBtnText}>+10</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalBtnCancel}
@@ -281,14 +304,36 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#f8fafc', marginBottom: 8 },
   modalSubtitle: { fontSize: 14, color: '#94a3b8', marginBottom: 16 },
-  jumpInput: {
-    backgroundColor: '#0f172a',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: '#f8fafc',
+  jumpSelectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
+  jumpStepBtn: {
+    flex: 1,
+    marginHorizontal: 3,
+    backgroundColor: '#0f172a',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  jumpStepBtnText: { fontSize: 14, fontWeight: '600', color: '#e5e7eb' },
+  jumpNumberBox: {
+    minWidth: 70,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    backgroundColor: '#020617',
+    borderWidth: 1,
+    borderColor: '#334155',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  jumpNumberText: { fontSize: 20, fontWeight: '700', color: '#f9fafb' },
   modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginLeft: 12 },
   modalBtnCancel: { paddingVertical: 12, paddingHorizontal: 20 },
   modalBtnCancelText: { color: '#94a3b8' },
