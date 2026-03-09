@@ -4,8 +4,7 @@
  * buraya da ekleyin; API yayında değilse bu listeler kullanılır.
  */
 export const NOTLAR_FALLBACK: { name: string; url: string }[] = [
-  // Tüm notlar Vercel'de public/kpss-notlar altında olmalı
-  { name: 'KPSS Coğrafya Kodlamaları', url: '/kpss-notlar/Kpss-Cografya-Kodlamalari.pdf' },
+  // Sadece istenen 4 not dosyası (public/kpss-notlar altında olmalı)
   { name: 'Tarih Ders Notu', url: '/kpss-notlar/22152510_tarh_ders_notu.pdf' },
   { name: 'KPSS Coğrafya Kodlamaları (PDF)', url: '/kpss-notlar/Kpss-Coğrafya-Kodlamaları-Pdf.pdf' },
   {
